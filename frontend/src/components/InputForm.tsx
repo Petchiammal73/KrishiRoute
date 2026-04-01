@@ -1,6 +1,6 @@
 import { useState } from "react";
 import MapPicker from "./MapPicker";
-import { markets } from "../data/markets";
+import API from "../api";
 import { useNavigate } from "react-router-dom";
 
 type FormData = {
@@ -8,12 +8,6 @@ type FormData = {
   quantity: number;
   vehicle: string;
   location: any;
-};
-
-const vehicleRates: any = {
-  tractor: 20,
-  truck: 40,
-  tataAce: 25,
 };
 
 export default function InputForm() {
@@ -24,56 +18,58 @@ export default function InputForm() {
     location: null,
   });
 
-  const navigate = useNavigate(); // navigation
+  const navigate = useNavigate();
 
-  const handleSubmit = () => {
-    if (!form.crop || !form.quantity || !form.vehicle) {
+  const handleSubmit = async () => {
+    if (!form.crop || !form.quantity || !form.vehicle || !form.location) {
       alert("Please fill all fields");
       return;
     }
 
-    const calculated = markets.map((m) => {
-      const revenue = m.price * form.quantity;
+    try {
+      const res = await API.post("/profit/calculate", {
+        crop: form.crop,
+        quantity: form.quantity,
+        vehicle: form.vehicle, 
+        sourceLocation: form.location,
+      });
 
-      const transport =
-        m.distance * (vehicleRates[form.vehicle] || 20);
+      const { bestMandi, allOptions } = res.data;
 
-      const netProfit = revenue - transport;
+      
+      const filtered = allOptions.filter((m: any) => m.netProfit > 0);
+      if (filtered.length === 0) {
+         alert("No profitable mandis found");
+         return;
+      }
+      
+      const sorted = filtered.sort(
+        (a: any, b: any) => b.netProfit - a.netProfit
+      );
 
-      return {
+      
+      const top5 = sorted.slice(0, 5);
+
+      
+      const minProfit = Math.min(...top5.map((m: any) => m.netProfit));
+      const savings = bestMandi.netProfit - minProfit;
+
+      
+      const finalResults = top5.map((m: any) => ({
         ...m,
-        revenue,
-        transport,
-        netProfit,
-      };
-    });
+        isBest: m.mandi === bestMandi.mandi,
+      }));
 
-    // FIND BEST MARKET
-    const best = calculated.reduce((prev, curr) =>
-      curr.netProfit > prev.netProfit ? curr : prev
-    );
-
-    // FIND WORST MARKET
-    const minProfit = Math.min(
-      ...calculated.map((m) => m.netProfit)
-    );
-
-    // CALCULATE SAVINGS
-    const savingsValue = best.netProfit - minProfit;
-
-    // ADD FLAG
-    const finalResults = calculated.map((m) => ({
-      ...m,
-      isBest: m.name === best.name,
-    }));
-
-    // NAVIGATE TO DASHBOARD
-    navigate("/dashboard", {
-      state: {
-        results: finalResults,
-        savings: savingsValue,
-      },
-    });
+      navigate("/dashboard", {
+        state: {
+          results: finalResults,
+          savings,
+        },
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Error fetching data from server");
+    }
   };
 
   return (
@@ -82,7 +78,7 @@ export default function InputForm() {
         🚜 Krishi Route Optimizer
       </h1>
 
-      {/* Crop */}
+      
       <div className="mb-4">
         <label className="block mb-1 font-medium">Crop</label>
         <select
@@ -92,13 +88,15 @@ export default function InputForm() {
           }
         >
           <option value="">Select Crop</option>
-          <option value="onion">Onion</option>
+          <option value="arhar">Arhar (Tur)</option>
+          <option value="cotton">Cotton</option>
+          <option value="jowar">Jowar</option>
+          <option value="soyabean">Soyabean</option>
           <option value="wheat">Wheat</option>
-          <option value="tomato">Tomato</option>
         </select>
       </div>
 
-      {/* Quantity */}
+      
       <div className="mb-4">
         <label className="block mb-1 font-medium">
           Quantity (quintals)
@@ -116,7 +114,7 @@ export default function InputForm() {
         />
       </div>
 
-      {/* Vehicle */}
+      
       <div className="mb-4">
         <label className="block mb-1 font-medium">Vehicle</label>
         <select
@@ -126,9 +124,9 @@ export default function InputForm() {
           }
         >
           <option value="">Select Vehicle</option>
-          <option value="tractor">Tractor</option>
-          <option value="truck">Truck</option>
-          <option value="tataAce">Tata Ace</option>
+          <option value="TRACTOR">Tractor</option>
+          <option value="TRUCK">Truck</option>
+          <option value="TATA_ACE">Tata Ace</option>
         </select>
       </div>
 
@@ -144,7 +142,7 @@ export default function InputForm() {
         />
       </div>
 
-      {/* Button */}
+      
       <button
         onClick={handleSubmit}
         className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition"

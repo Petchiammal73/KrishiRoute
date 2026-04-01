@@ -5,6 +5,11 @@ export default function Dashboard() {
   const location = useLocation();
   const { results, savings } = location.state || {};
 
+  const formatCurrency = (value: number) =>
+    value < 0
+      ? `-₹${Math.abs(Math.round(value)).toLocaleString("en-IN")}`
+      : `₹${Math.round(value).toLocaleString("en-IN")}`;
+
   if (!results) {
     return <p className="text-center mt-10">No data available</p>;
   }
@@ -19,19 +24,23 @@ export default function Dashboard() {
 
       {/* Savings */}
       <div className="p-4 bg-green-100 border border-green-400 rounded-lg text-center font-semibold">
-        💰 You can earn ₹{savings} more by choosing{" "}
-        <span className="font-bold">{best.name}</span>
+        💰 You can earn {formatCurrency(savings)} more by choosing{" "}
+        <span className="font-bold">{best.mandi}</span>
       </div>
 
       {/* Best Mandi Highlight */}
       <div className="p-6 bg-green-100 border border-green-500 rounded-xl shadow-md">
         <h2 className="text-xl font-bold">
-          ⭐ Best Market: {best.name}
+          ⭐ Best Market: {best.mandi}
         </h2>
-        <p>Revenue: ₹{best.revenue}</p>
-        <p>Transport: ₹{best.transport}</p>
-        <p className="text-green-600 font-bold">
-          Profit: ₹{best.netProfit}
+        <p>Revenue: {formatCurrency(best.revenue)}</p>
+        <p>Transport: {formatCurrency(best.transportCost)}</p>
+        <p
+          className={`font-bold ${
+            best.netProfit >= 0 ? "text-green-600" : "text-red-600"
+          }`}
+        >
+          Profit: {formatCurrency(best.netProfit)}
         </p>
       </div>
 
@@ -46,9 +55,15 @@ export default function Dashboard() {
                 : "bg-white"
             }`}
           >
-            <h3 className="font-bold">{r.name}</h3>
-            <p>Distance: {r.distance} km</p>
-            <p>Profit: ₹{r.netProfit}</p>
+            <h3 className="font-bold">{r.mandi}</h3>
+            <p>Distance: {Math.round(r.distance)} km</p>
+            <p
+              className={`font-semibold ${
+                r.netProfit >= 0 ? "text-green-600" : "text-red-600"
+              }`}
+            >
+              Profit: {formatCurrency(r.netProfit)}
+            </p>
           </div>
         ))}
       </div>
@@ -65,12 +80,12 @@ export default function Dashboard() {
 
         <div className="p-4 bg-white rounded-lg shadow">
           <h3 className="font-bold text-lg">Best Profit</h3>
-          <p>₹{best.netProfit}</p>
+          <p>{formatCurrency(best.netProfit)}</p>
         </div>
 
         <div className="p-4 bg-white rounded-lg shadow">
           <h3 className="font-bold text-lg">Savings</h3>
-          <p>₹{savings}</p>
+          <p>{formatCurrency(savings)}</p>
         </div>
       </div>
     </div>

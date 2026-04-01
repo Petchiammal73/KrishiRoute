@@ -20,10 +20,10 @@ export default function ProfitChart({ data }: Props) {
 
       <ResponsiveContainer width="100%" height={300}>
         <BarChart data={data}>
-          <XAxis dataKey="name" />
+          <XAxis dataKey="mandi" /> 
           <YAxis />
-          <Tooltip />
-          <Bar dataKey="netProfit" fill="#16a34a"  />
+          <Tooltip formatter={(value: any) => `₹${Math.round(value).toLocaleString("en-IN")}`}/>
+          <Bar dataKey="netProfit" fill="#16a34a" />
         </BarChart>
       </ResponsiveContainer>
     </div>
