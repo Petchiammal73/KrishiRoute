@@ -1,26 +1,23 @@
 import { Request, Response } from "express";
 import { fetchMandiPrices } from "../services/agmarknetService";
-import { getDistance } from "../services/distanceService";
 
-export const getNearbyMandis = (req: Request, res: Response) => {
+export const getMandis = async (req: Request, res: Response) => {
   try {
-    const { crop, location, radius = 100 } = req.body;
+    const { crop, state, district } = req.body;
 
-    const mandis = fetchMandiPrices(crop);
+    if (!crop || !state || !district) {
+      return res.status(400).json({ error: "Missing params" });
+    }
 
-    const nearby = mandis.map((m) => {
-  const distance = getDistance(location, m.location);
+    const data = await fetchMandiPrices(crop, state, district);
 
-  return { ...m, distance };
-});
+    res.json({
+      success: true,
+      count: data.length,
+      data
+    });
 
-console.log(
-  "Distances:",
-  nearby.map((m) => m.distance).slice(0, 5)
-);
-
-    res.json({ success: true, mandis: nearby });
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
   }
 };

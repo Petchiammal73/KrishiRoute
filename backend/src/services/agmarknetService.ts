@@ -1,61 +1,65 @@
-import mandiData from "../data/mandiData.json";
+import axios from "axios";
 import { resolveLocation } from "./locationService";
 import { logger } from "../utils/logger";
+import { resolveIds } from "./resolverService";
+import { getMarketsByDistrict } from "./marketService";
 
-const normalize = (str: string) =>
-  str.toLowerCase().trim();
+const BASE_URL = "https://api.agmarknet.gov.in/v1/dashboard-data/";
 
-// optional crop keyword mapping
-const cropMap: Record<string, string[]> = {
-  onion: ["onion"],
-  arhar: ["arhar", "tur", "red gram"],
-  tomato: ["tomato"]
-};
+export const fetchMandiPrices = async (
+  crop: string,
+  stateName: string,
+  districtName: string
+) => {
+  const { commodityId, stateId, districtId } =
+    await resolveIds(crop, stateName, districtName);
 
-export const fetchMandiPrices = (crop: string) => {
-  const normalizedCrop = normalize(crop);
+  const markets = await getMarketsByDistrict(stateId, districtId);
 
-  const keywords =
-    cropMap[normalizedCrop] || [normalizedCrop];
+  const results: any[] = [];
 
-  // Step 1: filter by crop
-  const filtered = (mandiData as any[]).filter((item) =>
-    keywords.some((k) =>
-      normalize(item.commodity).includes(k)
-    )
-  );
+  for (const market of markets.slice(0, 20)) { // limit for safety
+    try {
+      const params = {
+        dashboard: "marketwise_price_arrival",
+        date: new Date().toISOString().split("T")[0],
+        commodity: `[${commodityId}]`,
+        state: stateId,
+        district: `[${districtId}]`,
+        market: `[${market.id}]`,
+        variety: 100021,
+        grades: "[4]",
+        format: "json"
+      };
 
-  console.log("Filtered by crop:", filtered.length);
+      const res = await axios.get(BASE_URL, { params });
 
-  // Step 2: map + resolve location
-  const mapped = filtered.map((item) => {
-    const location = resolveLocation(
-      item.market,
-      item.district,
-      item.state
-    );
+      const record = res.data?.data?.records?.[0];
 
-    return {
-      name: item.market,
-      state: item.state,
-      district: item.district,
-      crop: item.commodity,
-      price: item.price,
-      location
-    };
-  });
+      if (!record) continue;
 
-  console.log("Before location filter:", mapped.length);
+      const location = resolveLocation(
+        market.mkt_name,
+        districtName,
+        stateName
+      );
 
-  // Step 3: remove missing locations
-  const results = mapped.filter((m) => m.location !== null);
+      results.push({
+        name: market.mkt_name,
+        state: "Andhra Pradesh",
+        district: "Chittoor",
+        crop: record.cmdt_name,
+        price: Number(record.as_on_price),
+        arrival: Number(record.as_on_arrival),
+        location
+      });
 
-  console.log("After location filter:", results.length);
+    } catch (err) {
+      logger.error("API error", { market: market.mkt_name });
+    }
+  }
 
-  // debug sample data
-  console.log("Sample mandiData:", (mandiData as any[]).slice(0, 3));
-
-  logger.info("Mandis fetched", { count: results.length });
+  logger.info("Dynamic mandis fetched", { count: results.length });
 
   return results;
 };
