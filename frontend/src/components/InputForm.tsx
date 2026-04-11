@@ -30,42 +30,57 @@ export default function InputForm() {
       const res = await API.post("/profit/calculate", {
         crop: form.crop,
         quantity: form.quantity,
-        vehicle: form.vehicle, 
+        vehicle: form.vehicle,
         sourceLocation: form.location,
       });
 
       const { bestMandi, allOptions } = res.data;
 
-      
       const filtered = allOptions.filter((m: any) => m.netProfit > 0);
       if (filtered.length === 0) {
-         alert("No profitable mandis found");
-         return;
+        alert("No profitable mandis found");
+        return;
       }
-      
+
       const sorted = filtered.sort(
         (a: any, b: any) => b.netProfit - a.netProfit
       );
 
-      
       const top5 = sorted.slice(0, 5);
 
-      
       const minProfit = Math.min(...top5.map((m: any) => m.netProfit));
       const savings = bestMandi.netProfit - minProfit;
 
-      
       const finalResults = top5.map((m: any) => ({
         ...m,
+        name: m.mandi, // 🔥 IMPORTANT FIX for your dashboard
         isBest: m.mandi === bestMandi.mandi,
       }));
 
-      navigate("/dashboard", {
-        state: {
-          results: finalResults,
-          savings,
-        },
-      });
+      // 🔥 ADD YOUR HISTORY FEATURE
+      const historyEntry = {
+        crop: form.crop,
+        quantity: form.quantity,
+        vehicle: form.vehicle,
+        bestMarket: bestMandi.mandi,
+        profit: bestMandi.netProfit,
+        timestamp: new Date().toISOString(),
+      };
+
+      const existingHistory = JSON.parse(
+        localStorage.getItem("history") || "[]"
+      );
+
+      const updatedHistory = [historyEntry, ...existingHistory].slice(0, 5);
+
+      localStorage.setItem("history", JSON.stringify(updatedHistory));
+
+      // 🔥 STORE FOR DASHBOARD (IMPORTANT FIX)
+      localStorage.setItem("dashboardData", JSON.stringify(finalResults));
+      localStorage.setItem("dashboardSavings", JSON.stringify(savings));
+
+      navigate("/dashboard");
+
     } catch (err) {
       console.error(err);
       alert("Error fetching data from server");
@@ -78,7 +93,6 @@ export default function InputForm() {
         🚜 Krishi Route Optimizer
       </h1>
 
-      
       <div className="mb-4">
         <label className="block mb-1 font-medium">Crop</label>
         <select
@@ -96,7 +110,6 @@ export default function InputForm() {
         </select>
       </div>
 
-      
       <div className="mb-4">
         <label className="block mb-1 font-medium">
           Quantity (quintals)
@@ -114,7 +127,6 @@ export default function InputForm() {
         />
       </div>
 
-      
       <div className="mb-4">
         <label className="block mb-1 font-medium">Vehicle</label>
         <select
@@ -130,7 +142,6 @@ export default function InputForm() {
         </select>
       </div>
 
-      {/* Map */}
       <div className="mb-6">
         <label className="block mb-2 font-medium">
           Select Location 📍
@@ -142,7 +153,6 @@ export default function InputForm() {
         />
       </div>
 
-      
       <button
         onClick={handleSubmit}
         className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700 transition"
