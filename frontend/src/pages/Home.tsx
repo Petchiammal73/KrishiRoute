@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 export default function Home() {
   return (
     <div className="px-6 md:px-16 py-10 space-y-16">
-
       
       <div className="text-center max-w-3xl mx-auto">
         <h1 className="text-4xl md:text-5xl font-bold mb-4">
@@ -18,14 +17,11 @@ export default function Home() {
           to="/optimizer"
           className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition"
         >
-          Try Optimizer 
+          Try Optimizer
         </Link>
       </div>
 
-      {/* SECTION 2 (TEXT LEFT, IMAGE RIGHT) */}
       <div className="grid md:grid-cols-2 gap-10 items-center">
-
-        {/* LEFT CONTENT */}
         <div>
           <h2 className="text-3xl font-bold mb-4">
             Maximize Your Profit
@@ -45,7 +41,6 @@ export default function Home() {
           </ul>
         </div>
 
-        {/* IMAGES */}
         <div className="grid grid-cols-2 gap-4">
           <img
             src="https://images.unsplash.com/photo-1560493676-04071c5f467b"
@@ -62,7 +57,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/*  SECTION 3 (FEATURE HIGHLIGHT) */}
       <div className="text-center max-w-4xl mx-auto">
         <h2 className="text-3xl font-bold mb-6">
           Why Use KrishiRoute?
@@ -94,7 +88,6 @@ export default function Home() {
           </div>
         </div>
       </div>
-
     </div>
   );
 }

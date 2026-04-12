@@ -2,7 +2,6 @@ export default function About() {
   return (
     <div className="px-6 md:px-16 py-10 space-y-12">
 
-      {/* HEADER */}
       <div className="text-center max-w-3xl mx-auto">
         <h1 className="text-4xl font-bold mb-4">
           About KrishiRoute 🌾
@@ -13,10 +12,8 @@ export default function About() {
         </p>
       </div>
 
-      {/* SECTION 1 (TEXT + IMAGE) */}
       <div className="grid md:grid-cols-2 gap-10 items-center">
 
-        {/* TEXT */}
         <div>
           <h2 className="text-2xl font-bold mb-4">
             The Problem
@@ -36,14 +33,12 @@ export default function About() {
           </p>
         </div>
 
-        {/* IMAGE */}
         <img
           src="https://images.unsplash.com/photo-1501004318641-b39e6451bec6"
           className="rounded-xl shadow-md"
         />
       </div>
 
-      {/* SECTION 2 */}
       <div className="text-center max-w-3xl mx-auto">
         <h2 className="text-2xl font-bold mb-4">
           Our Solution
@@ -56,7 +51,6 @@ export default function About() {
         </p>
       </div>
 
-      {/* FEATURES GRID */}
       <div className="grid md:grid-cols-3 gap-6 text-center">
         <div className="p-6 bg-white rounded-xl shadow">
           📊
@@ -89,7 +83,6 @@ export default function About() {
         </div>
       </div>
 
-      {/* IMPACT SECTION */}
       <div className="text-center max-w-3xl mx-auto">
         <h2 className="text-2xl font-bold mb-4">
           Impact

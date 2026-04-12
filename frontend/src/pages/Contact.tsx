@@ -2,7 +2,6 @@ export default function Contact() {
   return (
     <div className="px-6 md:px-16 py-10 space-y-12">
 
-      {/* HEADER */}
       <div className="text-center max-w-3xl mx-auto">
         <h1 className="text-4xl font-bold mb-4">
           Contact Us
@@ -12,10 +11,8 @@ export default function Contact() {
         </p>
       </div>
 
-      {/* MAIN SECTION */}
       <div className="grid md:grid-cols-2 gap-10 items-start">
 
-        {/* LEFT - CONTACT INFO */}
         <div className="space-y-6">
           <div>
             <h2 className="text-xl font-semibold">📧 Email</h2>
@@ -37,7 +34,6 @@ export default function Contact() {
           </div>
         </div>
 
-        {/* RIGHT - CONTACT FORM */}
         <div className="bg-white p-6 rounded-xl shadow-md">
           <h2 className="text-xl font-semibold mb-4">
             Send us a message
