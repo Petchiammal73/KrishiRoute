@@ -30,7 +30,7 @@ export default function InputForm() {
   const [mode, setMode] = useState<ModeType>("search");
   const navigate = useNavigate();
 
-  
+  // 📍 LOCATION MODE
   const handleModeChange = (selectedMode: ModeType) => {
     setMode(selectedMode);
 
@@ -58,6 +58,7 @@ export default function InputForm() {
     }
   };
 
+  // 🚀 SUBMIT
   const handleSubmit = async () => {
     if (!form.crop || form.quantity <= 0 || !form.vehicle || !form.location) {
       alert("Please fill all fields");
@@ -95,20 +96,22 @@ export default function InputForm() {
 
       const finalResults = top5.map((m: any) => ({
         ...m,
-        crop: form.crop,        
-        quantity: form.quantity, 
-        vehicle: form.vehicle,   
+        crop: form.crop,
+        quantity: form.quantity,
+        vehicle: form.vehicle,
         isBest: m.mandi === bestMandi.mandi,
       }));
 
+      // ✅ NAVIGATE WITH STATE (IMPORTANT)
       navigate("/dashboard", {
         state: {
           results: finalResults,
           savings,
           source: form.location,
-          fromCalculation: true
+          fromCalculation: true,
         },
       });
+
     } catch (err) {
       console.error(err);
       alert("Error fetching data");
@@ -168,18 +171,13 @@ export default function InputForm() {
 
       {/* LOCATION */}
       <div className="mb-4">
-        <label className="block mb-2 font-medium">
-          Select Location
-        </label>
+        <label className="block mb-2 font-medium">Select Location</label>
 
-        {/* TOGGLE */}
         <div className="flex gap-2 mb-3">
           <button
             onClick={() => handleModeChange("current")}
             className={`px-4 py-2 rounded ${
-              mode === "current"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200"
+              mode === "current" ? "bg-blue-600 text-white" : "bg-gray-200"
             }`}
           >
             📍 Current
@@ -188,9 +186,7 @@ export default function InputForm() {
           <button
             onClick={() => handleModeChange("search")}
             className={`px-4 py-2 rounded ${
-              mode === "search"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200"
+              mode === "search" ? "bg-blue-600 text-white" : "bg-gray-200"
             }`}
           >
             🔍 Search
@@ -199,25 +195,17 @@ export default function InputForm() {
           <button
             onClick={() => handleModeChange("map")}
             className={`px-4 py-2 rounded ${
-              mode === "map"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200"
+              mode === "map" ? "bg-blue-600 text-white" : "bg-gray-200"
             }`}
           >
             🗺️ Map
           </button>
         </div>
 
-        {/* SEARCH */}
         {mode === "search" && (
-          <LocationSearch
-            onSelect={(loc) =>
-              setForm({ ...form, location: loc })
-            }
-          />
+          <LocationSearch onSelect={(loc) => setForm({ ...form, location: loc })} />
         )}
 
-        {/* MAP */}
         {mode === "map" && (
           <MapPicker
             selectedLocation={form.location}
@@ -228,14 +216,12 @@ export default function InputForm() {
         )}
       </div>
 
-      {/* SELECTED LOCATION */}
       {form.location && (
         <p className="text-sm text-gray-700 mb-4 font-medium">
           📍 Selected: {form.location.label}
         </p>
       )}
 
-      {/* SUBMIT */}
       <button
         onClick={handleSubmit}
         className="w-full bg-green-600 text-white py-3 rounded-lg font-semibold hover:bg-green-700"

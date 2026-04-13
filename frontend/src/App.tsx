@@ -1,4 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+
 import Navbar from "./components/NavBar";
 import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
@@ -7,13 +9,26 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import History from "./pages/History";
+import MapPage from "./pages/MapPage";
 import Profile from "./pages/Profile";
 import ProtectedRoute from "./components/ProtectedRoute";
-import MapPage from "./pages/MapPage";
-import History from "./pages/History";
 
 function App() {
-  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+  const [isLoggedIn, setIsLoggedIn] = useState(
+    localStorage.getItem("isLoggedIn") === "true"
+  );
+
+  // 🔥 Auto update login state
+  useEffect(() => {
+    const checkLogin = () => {
+      setIsLoggedIn(localStorage.getItem("isLoggedIn") === "true");
+    };
+
+    window.addEventListener("storage", checkLogin);
+
+    return () => window.removeEventListener("storage", checkLogin);
+  }, []);
 
   return (
     <BrowserRouter>
@@ -21,8 +36,10 @@ function App() {
         <Navbar />
 
         <Routes>
+          {/* HOME */}
           <Route path="/" element={<Home />} />
 
+          {/* AUTH */}
           <Route
             path="/login"
             element={!isLoggedIn ? <Login /> : <Navigate to="/" replace />}
@@ -33,9 +50,11 @@ function App() {
             element={!isLoggedIn ? <Signup /> : <Navigate to="/" replace />}
           />
 
+          {/* PUBLIC */}
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
 
+          {/* PROTECTED */}
           <Route
             path="/optimizer"
             element={
@@ -54,8 +73,23 @@ function App() {
             }
           />
 
-          <Route path="/map" element={<MapPage />} />
-          <Route path="/history" element={<History />} />
+          <Route
+            path="/map"
+            element={
+              <ProtectedRoute>
+                <MapPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <History />
+              </ProtectedRoute>
+            }
+          />
 
           <Route
             path="/profile"

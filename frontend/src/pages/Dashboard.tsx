@@ -23,6 +23,7 @@ export default function Dashboard() {
 
   const best = results?.find((r: any) => r.isBest);
 
+  // ✅ FETCH HISTORY (ALWAYS)
   const fetchHistory = async (email: string) => {
     try {
       const res = await getHistory(email);
@@ -32,6 +33,7 @@ export default function Dashboard() {
     }
   };
 
+  // ✅ LOAD USER + HISTORY ON PAGE LOAD
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
 
@@ -41,21 +43,15 @@ export default function Dashboard() {
     }
   }, []);
 
+  // ✅ SAVE HISTORY ONLY AFTER CALCULATION
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
 
     if (!results?.length || !best || !user?.email || !fromCalculation) return;
 
-    const saveKey = `history-saved:${user.email}:${best.crop ?? "NA"}:${
-      best.mandi ?? "NA"
-    }:${best.quantity ?? 0}:${best.vehicle ?? "NA"}:${Math.round(
-      best.netProfit ?? 0
-    )}`;
-
-    if (hasSaved.current || localStorage.getItem(saveKey) === "1") return;
+    if (hasSaved.current) return;
 
     hasSaved.current = true;
-    localStorage.setItem(saveKey, "1");
 
     const payload = {
       userEmail: user.email,
@@ -68,15 +64,15 @@ export default function Dashboard() {
 
     saveHistory(payload)
       .then(() => {
-        fetchHistory(user.email);
+        fetchHistory(user.email); // 🔥 IMPORTANT FIX
       })
       .catch((err) => {
         console.error("❌ Save history error:", err);
         hasSaved.current = false;
-        localStorage.removeItem(saveKey);
       });
   }, [results, best, fromCalculation]);
 
+  // 🚫 NO DATA
   if (!results || results.length === 0) {
     return (
       <div className="text-center mt-20 text-gray-500">
@@ -88,28 +84,45 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-8">
+
+      {/* HEADER */}
       <div className="text-center">
-        <h1 className="text-3xl font-bold">👋 Welcome back, {username || "Farmer"}</h1>
-        <p className="text-gray-500">Smart insights for your crop selling decisions</p>
+        <h1 className="text-3xl font-bold">
+          👋 Welcome back, {username || "Farmer"}
+        </h1>
+        <p className="text-gray-500">
+          Smart insights for your crop selling decisions
+        </p>
       </div>
 
+      {/* HERO */}
       <div className="bg-gradient-to-r from-green-500 to-green-700 text-white p-6 rounded-2xl shadow-lg">
-        <h2 className="text-xl font-semibold mb-2">💰 Best Market Recommendation</h2>
+        <h2 className="text-xl font-semibold mb-2">
+          💰 Best Market Recommendation
+        </h2>
+
         <p>
           Sell at <span className="font-bold">{best?.mandi}</span> → Earn{" "}
-          <span className="font-bold">{formatCurrency(best?.netProfit)}</span>
+          <span className="font-bold">
+            {formatCurrency(best?.netProfit)}
+          </span>
         </p>
+
         <p className="text-sm mt-2 opacity-90">
           You gain {formatCurrency(savings || 0)} more compared to others
         </p>
+
         <button
-          onClick={() => navigate("/map", { state: { source, results, best } })}
+          onClick={() =>
+            navigate("/map", { state: { source, results, best } })
+          }
           className="mt-4 bg-white text-green-700 px-4 py-2 rounded-lg font-medium"
         >
           📍 View Route Map
         </button>
       </div>
 
+      {/* METRICS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-5 rounded-2xl shadow text-center">
           <p className="text-gray-500 text-sm">Markets Compared</p>
@@ -131,27 +144,42 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* MARKET CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {results.map((r: any, i: number) => (
           <div
             key={i}
             className={`p-5 rounded-2xl shadow ${
-              r.isBest ? "bg-green-50 border border-green-400" : "bg-white"
+              r.isBest
+                ? "bg-green-50 border border-green-400"
+                : "bg-white"
             }`}
           >
             <h3 className="font-bold">{r.mandi}</h3>
-            <p className="text-sm text-gray-500">Distance: {Math.round(r.distance)} km</p>
-            <p className="text-green-600 font-semibold">{formatCurrency(r.netProfit)}</p>
-            {r.isBest && <span className="text-xs text-green-700 font-bold">⭐ Best Choice</span>}
+            <p className="text-sm text-gray-500">
+              Distance: {Math.round(r.distance)} km
+            </p>
+            <p className="text-green-600 font-semibold">
+              {formatCurrency(r.netProfit)}
+            </p>
+
+            {r.isBest && (
+              <span className="text-xs text-green-700 font-bold">
+                ⭐ Best Choice
+              </span>
+            )}
           </div>
         ))}
       </div>
 
+      {/* CHART */}
       <ProfitChart data={results} />
 
+      {/* HISTORY */}
       <div className="bg-white p-5 rounded-2xl shadow">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">🕒 Recent Activity</h2>
+
           <button
             onClick={() => navigate("/history")}
             className="text-green-600 text-sm font-semibold hover:underline"
@@ -167,15 +195,20 @@ export default function Dashboard() {
             {history.slice(0, 2).map((h, i) => (
               <div key={i} className="p-4 border rounded-xl">
                 <p className="font-semibold">
-                  {h.crop || "Not Selected"} → {h.bestMarket}
+                  {h.crop} → {h.bestMarket}
                 </p>
+
                 <p className="text-sm text-gray-500">
-                  Qty: {h.quantity || 0} | {h.vehicle || "N/A"}
+                  Qty: {h.quantity} | {h.vehicle}
                 </p>
+
                 <p className="text-xs text-gray-400">
                   {new Date(h.timestamp).toLocaleString()}
                 </p>
-                <p className="text-green-600 font-bold">₹{Math.round(h.profit)}</p>
+
+                <p className="text-green-600 font-bold">
+                  {formatCurrency(h.profit)}
+                </p>
               </div>
             ))}
           </div>

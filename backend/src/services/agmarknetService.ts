@@ -1,50 +1,68 @@
-import mandiData from "../data/mandiData.json";
+import axios from "axios";
 import { resolveLocation } from "./locationService";
 import { logger } from "../utils/logger";
+import { resolveIds } from "./resolverService";
+import { getMarketsByDistrict } from "./marketService";
 
-const normalize = (str: string) =>
-  str.toLowerCase().trim();
+const BASE_URL = "https://api.agmarknet.gov.in/v1/dashboard-data/";
 
-const cropMap: Record<string, string[]> = {
-  onion: ["onion"],
-  arhar: ["arhar", "tur", "red gram"],
-  tomato: ["tomato"]
-};
+export const fetchMandiPrices = async (
+  crop: string,
+  stateName: string,
+  districtName: string
+) => {
+  const { commodityId, stateId, districtId } =
+    await resolveIds(crop, stateName, districtName);
 
-export const fetchMandiPrices = (crop: string) => {
-  const normalizedCrop = normalize(crop);
+  const markets = await getMarketsByDistrict(stateId, districtId);
 
-  const keywords =
-    cropMap[normalizedCrop] || [normalizedCrop];
+  const results: any[] = [];
 
-  
-  const filtered = (mandiData as any[]).filter((item) =>
-    keywords.some((k) =>
-      normalize(item.commodity).includes(k)
-    )
-  );
+  for (const market of markets.slice(0, 20)) { // limit for safety
+    try {
+      const params = {
+        dashboard: "marketwise_price_arrival",
+        date: new Date().toISOString().split("T")[0],
+        commodity: `[${commodityId}]`,
+        state: stateId,
+        district: `[${districtId}]`,
+        market: `[${market.id}]`,
+        variety: 100021,
+        grades: "[4]",
+        format: "json"
+      };
 
-  const mapped = filtered.map((item) => {
-    const location = resolveLocation(
-      item.market,
-      item.district,
-      item.state
-    );
+      const res = await axios.get(BASE_URL, { params });
 
-    return {
-      name: item.market,
-      state: item.state,
-      district: item.district,
-      crop: item.commodity,
-      price: item.price,
-      location
-    };
-  });
+      const record = res.data?.data?.records?.[0];
 
-  
-  const results = mapped.filter((m) => m.location !== null);
+      if (!record) continue;
 
-  logger.info("Mandis fetched", { count: results.length });
+      const location = resolveLocation(
+        market.mkt_name,
+        districtName,
+        stateName
+      );
+
+      // optional: skip if location not found
+      if (!location) continue;
+
+      results.push({
+        name: market.mkt_name,
+        state: stateName,
+        district: districtName,
+        crop: record.cmdt_name,
+        price: Number(record.as_on_price),
+        arrival: Number(record.as_on_arrival),
+        location
+      });
+
+    } catch (err) {
+      logger.error("API error", { market: market.mkt_name });
+    }
+  }
+
+  logger.info("Dynamic mandis fetched", { count: results.length });
 
   return results;
 };

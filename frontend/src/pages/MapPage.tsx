@@ -13,6 +13,7 @@ export default function MapPage() {
   const best = results.find((r: any) => r.isBest);
   const top5 = results.slice(0, 5);
 
+  // 🚫 NO DATA SAFETY
   if (!source || results.length === 0) {
     return (
       <div className="text-center mt-20">
@@ -36,7 +37,7 @@ export default function MapPage() {
         🗺️ Route Visualization
       </h1>
 
-      {/* ⭐ BEST ROUTE MAP */}
+      {/* ⭐ BEST ROUTE */}
       <div className="bg-white p-4 rounded-xl shadow">
         <h2 className="font-semibold mb-2">⭐ Best Route</h2>
 
@@ -51,16 +52,16 @@ export default function MapPage() {
         </div>
       </div>
 
-      {/* 📍 ALL / TOP ROUTES MAP */}
+      {/* 📍 ALL ROUTES */}
       <div className="bg-white p-4 rounded-xl shadow">
-        <h2 className="font-semibold mb-2">📍 All Routes</h2>
+        <h2 className="font-semibold mb-2">📍 Top 5 Routes</h2>
 
         <div className="h-[400px] rounded-xl overflow-hidden">
           <RouteMap source={source} mandis={top5} />
         </div>
       </div>
 
-      {/* BACK BUTTON */}
+      {/* BACK */}
       <div className="text-center">
         <button
           onClick={() => navigate(-1)}

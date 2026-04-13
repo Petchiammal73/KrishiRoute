@@ -11,8 +11,11 @@ export default function Navbar() {
 
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
-    if (user.email) setUsername(user.email.split("@")[0]);
-    else setUsername("");
+    if (user.email) {
+      setUsername(user.email.split("@")[0]);
+    } else {
+      setUsername("");
+    }
   }, [isLoggedIn]);
 
   const handleLogout = () => {
@@ -21,7 +24,6 @@ export default function Navbar() {
     localStorage.removeItem("isLoggedIn");
 
     setOpen(false);
-
     navigate("/login", { replace: true });
   };
 
@@ -35,12 +37,13 @@ export default function Navbar() {
   return (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b">
       <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+
         {/* LOGO */}
         <Link to="/" className="text-xl font-bold text-green-600">
           🚜 KrishiRoute
         </Link>
 
-        {/* NAV LINKS (only logged in) */}
+        {/* CENTER NAV */}
         {isLoggedIn && (
           <div className="hidden md:flex gap-8 text-sm">
             <Link to="/optimizer" className={navLink("/optimizer")}>
@@ -53,13 +56,14 @@ export default function Navbar() {
           </div>
         )}
 
-        {/* RIGHT SIDE */}
+        {/* RIGHT */}
         <div className="flex items-center gap-4">
+
           {/* PROFILE */}
           {isLoggedIn && (
             <button
               onClick={() => navigate("/profile")}
-              className="w-9 h-9 bg-green-600 text-white rounded-full"
+              className="w-9 h-9 bg-green-600 text-white rounded-full flex items-center justify-center"
             >
               {username?.[0]?.toUpperCase() || "U"}
             </button>
@@ -69,6 +73,7 @@ export default function Navbar() {
           <button onClick={() => setOpen(!open)}>☰</button>
         </div>
       </div>
+
       {/* DROPDOWN */}
       <div
         className={`absolute right-6 top-16 w-64 bg-white/90 backdrop-blur-md shadow-xl rounded-2xl p-5 space-y-4 border transform transition-all duration-200 ${
@@ -86,27 +91,15 @@ export default function Navbar() {
           </button>
         </div>
 
-        <Link
-          to="/"
-          onClick={() => setOpen(false)}
-          className="block hover:text-green-600"
-        >
+        <Link to="/" onClick={() => setOpen(false)} className="block hover:text-green-600">
           Home
         </Link>
 
-        <Link
-          to="/about"
-          onClick={() => setOpen(false)}
-          className="block hover:text-green-600"
-        >
+        <Link to="/about" onClick={() => setOpen(false)} className="block hover:text-green-600">
           About
         </Link>
 
-        <Link
-          to="/contact"
-          onClick={() => setOpen(false)}
-          className="block hover:text-green-600"
-        >
+        <Link to="/contact" onClick={() => setOpen(false)} className="block hover:text-green-600">
           Contact
         </Link>
 
@@ -114,11 +107,7 @@ export default function Navbar() {
           <>
             <hr />
 
-            <Link
-              to="/profile"
-              onClick={() => setOpen(false)}
-              className="block hover:text-green-600"
-            >
+            <Link to="/profile" onClick={() => setOpen(false)} className="block hover:text-green-600">
               Profile
             </Link>
 
@@ -133,19 +122,11 @@ export default function Navbar() {
           <>
             <hr />
 
-            <Link
-              to="/login"
-              onClick={() => setOpen(false)}
-              className="block hover:text-green-600"
-            >
+            <Link to="/login" onClick={() => setOpen(false)} className="block hover:text-green-600">
               Login
             </Link>
 
-            <Link
-              to="/signup"
-              onClick={() => setOpen(false)}
-              className="block hover:text-green-600"
-            >
+            <Link to="/signup" onClick={() => setOpen(false)} className="block hover:text-green-600">
               Signup
             </Link>
           </>

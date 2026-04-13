@@ -1,8 +1,8 @@
 import express from "express";
-import { getNearbyMandis } from "../controllers/mandiController";
+import { getMandis } from "../controllers/mandiController";
 
 const router = express.Router();
 
-router.post("/nearby", getNearbyMandis);
+router.post("/nearby", getMandis);
 
 export default router;
