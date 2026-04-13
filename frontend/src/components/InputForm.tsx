@@ -106,6 +106,7 @@ export default function InputForm() {
           results: finalResults,
           savings,
           source: form.location,
+          fromCalculation: true
         },
       });
     } catch (err) {
