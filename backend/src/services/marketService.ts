@@ -7,6 +7,6 @@ export const getMarketsByDistrict = async (stateId: number, districtId: number) 
     (m: any) =>
       m.state_id === stateId &&
       m.district_id === districtId &&
-      m.id !== 100009 // remove "All Markets"
+      m.id !== 100009 
   );
 };

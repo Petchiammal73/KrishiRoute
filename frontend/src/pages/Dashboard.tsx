@@ -1,5 +1,5 @@
 import { useLocation, useNavigate, Navigate } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import ProfitChart from "../components/ProfitChart";
 import { saveHistory, getHistory } from "../api/historyApi";
 
@@ -13,27 +13,26 @@ export default function Dashboard() {
 
   const [username, setUsername] = useState("");
   const [history, setHistory] = useState<any[]>([]);
-
   const hasSaved = useRef(false);
-
-  const formatCurrency = (value: number = 0) =>
-    `₹${Math.round(value).toLocaleString("en-IN")}`;
 
   if (!isLoggedIn) return <Navigate to="/login" replace />;
 
   const best = results?.find((r: any) => r.isBest);
 
-  // ✅ FETCH HISTORY (ALWAYS)
+  const formatCurrency = (value: number = 0) =>
+    `₹${Math.round(value).toLocaleString("en-IN")}`;
+
+ 
   const fetchHistory = async (email: string) => {
     try {
       const res = await getHistory(email);
       setHistory(res.data || []);
     } catch (err) {
-      console.error("❌ Fetch history error:", err);
+      console.error("Fetch history error:", err);
     }
   };
 
-  // ✅ LOAD USER + HISTORY ON PAGE LOAD
+  
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
 
@@ -43,36 +42,40 @@ export default function Dashboard() {
     }
   }, []);
 
-  // ✅ SAVE HISTORY ONLY AFTER CALCULATION
   useEffect(() => {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
 
     if (!results?.length || !best || !user?.email || !fromCalculation) return;
 
-    if (hasSaved.current) return;
+    const saveKey = `history-saved:${user.email}:${best.name}:${best.netProfit}`;
+
+    if (hasSaved.current || localStorage.getItem(saveKey)) return;
 
     hasSaved.current = true;
+    localStorage.setItem(saveKey, "1");
 
     const payload = {
       userEmail: user.email,
       crop: best.crop ?? "Not Selected",
-      bestMarket: best.mandi ?? "Unknown Market",
+      bestMarket: best.name ?? "Unknown Market",
       quantity: best.quantity ?? 0,
       vehicle: best.vehicle ?? "Not Selected",
       profit: Math.round(best.netProfit ?? 0),
+      timestamp: new Date().toISOString(),
     };
 
     saveHistory(payload)
-      .then(() => {
-        fetchHistory(user.email); // 🔥 IMPORTANT FIX
+      .then(async () => {
+        // 🔥 ALWAYS REFRESH FROM DATABASE
+        await fetchHistory(user.email);
       })
       .catch((err) => {
-        console.error("❌ Save history error:", err);
+        console.error("Save history error:", err);
         hasSaved.current = false;
+        localStorage.removeItem(saveKey);
       });
   }, [results, best, fromCalculation]);
 
-  // 🚫 NO DATA
   if (!results || results.length === 0) {
     return (
       <div className="text-center mt-20 text-gray-500">
@@ -95,14 +98,14 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* HERO */}
+      {/* BEST RESULT */}
       <div className="bg-gradient-to-r from-green-500 to-green-700 text-white p-6 rounded-2xl shadow-lg">
         <h2 className="text-xl font-semibold mb-2">
           💰 Best Market Recommendation
         </h2>
 
         <p>
-          Sell at <span className="font-bold">{best?.mandi}</span> → Earn{" "}
+          Sell at <span className="font-bold">{best?.name}</span> → Earn{" "}
           <span className="font-bold">
             {formatCurrency(best?.netProfit)}
           </span>
@@ -122,7 +125,7 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* METRICS */}
+      {/* STATS */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white p-5 rounded-2xl shadow text-center">
           <p className="text-gray-500 text-sm">Markets Compared</p>
@@ -155,10 +158,12 @@ export default function Dashboard() {
                 : "bg-white"
             }`}
           >
-            <h3 className="font-bold">{r.mandi}</h3>
+            <h3 className="font-bold">{r.name}</h3>
+
             <p className="text-sm text-gray-500">
               Distance: {Math.round(r.distance)} km
             </p>
+
             <p className="text-green-600 font-semibold">
               {formatCurrency(r.netProfit)}
             </p>
@@ -175,7 +180,7 @@ export default function Dashboard() {
       {/* CHART */}
       <ProfitChart data={results} />
 
-      {/* HISTORY */}
+      {/* RECENT ACTIVITY */}
       <div className="bg-white p-5 rounded-2xl shadow">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">🕒 Recent Activity</h2>
@@ -207,7 +212,7 @@ export default function Dashboard() {
                 </p>
 
                 <p className="text-green-600 font-bold">
-                  {formatCurrency(h.profit)}
+                  ₹{Math.round(h.profit)}
                 </p>
               </div>
             ))}

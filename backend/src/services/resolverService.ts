@@ -3,16 +3,31 @@ import { loadFilters } from "./filterService";
 const normalize = (str: string) =>
   str.toLowerCase().replace(/[^a-z]/g, "");
 
+const districtAliases: Record<string, string> = {
+  thoothukudi: "tuticorin",
+  tuticorin: "tuticorin",
+  kanniyakumari: "nagercoilkannyiakumari",
+  kanyakumari: "nagercoilkannyiakumari",
+  tirunelveli: "thirunelveli",
+  tirupur: "thirupur",
+  tiruvallur: "thiruvellore",
+};
+
 export const resolveIds = async (
   crop: string,
-  stateName = "Andhra Pradesh",
-  districtName = "Chittor"
+  stateName: string,
+  districtName: string
 ) => {
   const data = await loadFilters();
 
   const normCrop = normalize(crop);
   const normState = normalize(stateName);
-  const normDistrict = normalize(districtName);
+  let normDistrict = normalize(districtName);
+
+  // 🔹 Apply alias mapping
+  if (districtAliases[normDistrict]) {
+    normDistrict = districtAliases[normDistrict];
+  }
 
   const commodity = data.cmdt_data.find((c: any) =>
     normalize(c.cmdt_name).includes(normCrop)
@@ -40,10 +55,13 @@ export const resolveIds = async (
 
     throw new Error(`District not found: ${districtName}`);
   }
-
+  console.log("Matched commodity:", commodity);
+console.log("Matched state:", state);
+console.log("Matched district:", district);
+  
   return {
     commodityId: commodity.cmdt_id,
     stateId: state.state_id,
-    districtId: district.id
+    districtId: district.id,
   };
 };

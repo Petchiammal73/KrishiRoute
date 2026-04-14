@@ -1,8 +1,8 @@
 import express from "express";
-import { bestMarket } from "../controllers/profitController";
+import {getBestMandi } from "../controllers/profitController";
 
 const router = express.Router();
 
-router.post("/calculate", bestMarket);
+router.post("/calculate", getBestMandi);
 
 export default router;

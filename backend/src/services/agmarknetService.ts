@@ -1,68 +1,105 @@
 import axios from "axios";
+import { resolveIds } from "./resolverService";
 import { resolveLocation } from "./locationService";
 import { logger } from "../utils/logger";
-import { resolveIds } from "./resolverService";
-import { getMarketsByDistrict } from "./marketService";
 
-const BASE_URL = "https://api.agmarknet.gov.in/v1/dashboard-data/";
+const BASE_URL = process.env.AGMARKNET_BASE_URL;
 
 export const fetchMandiPrices = async (
   crop: string,
   stateName: string,
   districtName: string
 ) => {
-  const { commodityId, stateId, districtId } =
-    await resolveIds(crop, stateName, districtName);
+  try {
+    console.log("BASE URL:", BASE_URL);
 
-  const markets = await getMarketsByDistrict(stateId, districtId);
+    if (!BASE_URL) {
+      throw new Error("AGMARKNET_BASE_URL is not defined in .env");
+    }
 
-  const results: any[] = [];
+    const { commodityId, stateId, districtId } = await resolveIds(
+      crop,
+      stateName,
+      districtName
+    );
 
-  for (const market of markets.slice(0, 20)) { // limit for safety
-    try {
+    if (!commodityId || !stateId || !districtId) {
+      throw new Error("Failed to resolve Agmarknet IDs");
+    }
+
+    console.log({ crop, stateName, districtName, commodityId, stateId, districtId });
+
+    const getFormattedDate = (date: Date) => date.toISOString().split("T")[0];
+
+    let records: any[] = [];
+
+    for (let i = 0; i < 7; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+
+      const formattedDate = getFormattedDate(date);
+      console.log("Trying date:", formattedDate);
+
       const params = {
         dashboard: "marketwise_price_arrival",
-        date: new Date().toISOString().split("T")[0],
+        date: formattedDate,
         commodity: `[${commodityId}]`,
         state: stateId,
         district: `[${districtId}]`,
-        market: `[${market.id}]`,
-        variety: 100021,
-        grades: "[4]",
-        format: "json"
+        format: "json",
       };
 
-      const res = await axios.get(BASE_URL, { params });
-
-      const record = res.data?.data?.records?.[0];
-
-      if (!record) continue;
-
-      const location = resolveLocation(
-        market.mkt_name,
-        districtName,
-        stateName
-      );
-
-      // optional: skip if location not found
-      if (!location) continue;
-
-      results.push({
-        name: market.mkt_name,
-        state: stateName,
-        district: districtName,
-        crop: record.cmdt_name,
-        price: Number(record.as_on_price),
-        arrival: Number(record.as_on_arrival),
-        location
+      const response = await axios.get(`${BASE_URL}/dashboard-data/`, {
+        params,
+        timeout: 10000,
       });
 
-    } catch (err) {
-      logger.error("API error", { market: market.mkt_name });
+      console.log("Raw response:", response.data);
+
+      const dataBlock = response.data?.data;
+      console.log("dataBlock:", dataBlock);
+
+      records = dataBlock?.records || dataBlock?.rows || dataBlock?.data || [];
+      console.log("Records found:", records.length);
+
+      if (records.length > 0) {
+        console.log(`Data found for date: ${formattedDate}`);
+        break;
+      }
     }
+
+    if (!records.length) {
+      logger.info("Real mandi data fetched", { count: 0 });
+      return [];
+    }
+
+    
+  const mandis = records.map((r: any) => {
+  const marketName =
+    r.market_name ||
+    r.market ||
+    r.marketName ||
+    districtName;
+
+  return {
+    name: marketName,
+    state: stateName,
+    district: districtName,
+    crop: r.cmdt_name || crop,
+    price: Number(r.as_on_price || r.msp_price || 0),
+    arrival: Number(r.as_on_arrival || 0),
+    date: r.reported_date || r.price_date || "",
+    location: resolveLocation(marketName, districtName, stateName),
+  };
+});
+
+    logger.info("Real mandi data fetched", {
+      count: mandis.length,
+    });
+
+    return mandis;
+  } catch (error: any) {
+    console.error("Agmarknet Service Error:", error.message);
+    throw error;
   }
-
-  logger.info("Dynamic mandis fetched", { count: results.length });
-
-  return results;
 };

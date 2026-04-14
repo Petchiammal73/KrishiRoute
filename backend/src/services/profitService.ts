@@ -1,54 +1,89 @@
-type BestMarket = {
-  market: string;
-  price: number;
-  arrival: number;
-  distance: number;
-  profit: number;
-};
-
 import { fetchMandiPrices } from "./agmarknetService";
+import { getDistance } from "./distanceService";
+import { Location } from "../types";
+import { Mandi } from "../types";
 
-const transportCost = (distance: number) => {
-  return distance * 2;
+interface MarketOption {
+  name: string;
+  state: string;
+  district: string;
+  price: number;
+  distance: number;
+  transportCost: number;
+  totalRevenue: number;
+  netProfit: number;
+}
+
+const vehicleRates: Record<string, number> = {
+  mini: 15,
+  truck: 25,
+  lorry: 35
 };
 
 export const getBestMarket = async (
   crop: string,
   quantity: number,
   state: string,
-  district: string
-): Promise<BestMarket> => {
-
-  const mandis = await fetchMandiPrices(crop, state, district);
+  district: string,
+  vehicle: string,
+  sourceLocation: Location
+) => {
+  // 🔹 Fetch real mandi data
+  const mandis = await fetchMandiPrices(
+    crop,
+    state,
+    district
+  );
 
   if (!mandis.length) {
-    throw new Error("No mandi data available");
+    return {
+      bestMandi: null,
+      allOptions: []
+    };
   }
 
-  let best: BestMarket = {
-    market: "",
-    price: 0,
-    arrival: 0,
-    distance: 0,
-    profit: -Infinity
-  };
+  const ratePerKm = vehicleRates[vehicle] || 20;
 
-  for (const mandi of mandis) {
-    const distance = mandi.location?.distance || 50;
+  const allOptions: MarketOption[] = mandis
+    .filter((m:Mandi) => m.location)
+    .map((m:Mandi) => {
+      const distance = getDistance(
+        sourceLocation,
+        m.location
+      );
 
-    const profit =
-      mandi.price * quantity - transportCost(distance);
+      const transportCost = distance * ratePerKm;
 
-    if (profit > best.profit) {
-      best = {
-        market: mandi.name,
-        price: mandi.price,
-        arrival: mandi.arrival,
+      const totalRevenue = m.price * quantity;
+
+      const netProfit = totalRevenue - transportCost;
+
+      return {
+        name: m.name,
+        state: m.state,
+        district: m.district,
+        price: m.price,
         distance,
-        profit
+        transportCost,
+        totalRevenue,
+        netProfit
       };
-    }
+    });
+
+  if (!allOptions.length) {
+    return {
+      bestMandi: null,
+      allOptions: []
+    };
   }
 
-  return best;
+  // 🔹 Find best mandi by highest net profit
+  const bestMandi = allOptions.reduce((best, current) =>
+    current.netProfit > best.netProfit ? current : best
+  );
+
+  return {
+    bestMandi,
+    allOptions
+  };
 };
